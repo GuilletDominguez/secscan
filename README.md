@@ -186,9 +186,10 @@ ignore:
 - Que ZAP no sale del alcance se comprobó con ZAP real contra servidores que registran peticiones: enlaces a otro puerto, enlaces a una ruta hermana (`/app` frente a `/application`) y redirecciones 302 hacia otro puerto. No se probó con un DNS que cambie durante el escaneo ni con redirecciones a otro *host*; en ese caso solo protege la IP fijada.
 - ZAP descarga las reglas pasivas beta al arrancar: el escaneo web necesita red hacia los servidores de ZAP, y si esa descarga falla se ejecuta sin ellas (sin aviso).
 
-## Seguridad y contribuciones
+## Uso libre
 
-Para avisar de una vulnerabilidad, mira [SECURITY.md](SECURITY.md). Para contribuir, [CONTRIBUTING.md](CONTRIBUTING.md).
+Es una herramienta de uso libre, sin garantía ni soporte, y sus resultados no son una auditoría: mira
+[SECURITY.md](SECURITY.md). Si quieres tocar el código, [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Tests
 
