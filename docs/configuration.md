@@ -28,6 +28,17 @@ Escaneo web pasivo con ZAP. Rastrea y examina las respuestas; no envía ataques.
 | `--minutes` | de 1 a 30: minutos máximos de rastreo | 1 |
 | `--config` | fichero `.secscan.yml` con lo que se ignora | ninguno |
 
+### `secscan ports HOST`
+
+Escaneo de puertos TCP con nmap. `HOST` es un dominio o una IP, sin `http://` ni puerto.
+
+| Opción | Valores | Por defecto |
+|---|---|---|
+| `--i-own-this` | confirma que el sistema es tuyo o tienes permiso. Obligatorio salvo para `localhost` o una IP de loopback | no |
+| `--ports` | puertos del 1 al 65535, separados por comas o en rango: `80,443` o `1-1024` | los 1000 más comunes |
+| `--versions` | identifica el servicio y la versión de cada puerto abierto; envía sondas, así que es más intrusivo | no |
+| `--config` | fichero `.secscan.yml` con lo que se ignora | ninguno |
+
 ### `secscan image IMAGEN`
 
 Escanea una imagen de Docker que ya esté en local (`docker pull` antes si hace falta).
@@ -216,6 +227,7 @@ código de forks.
 | Trivy | su base de datos, publicada en registros de contenedores | Descargar las vulnerabilidades conocidas (~130 MB, a diario en la action). |
 | Semgrep | el registro de Semgrep y, con métricas, `semgrep.dev` | Descargar las reglas y enviar métricas anónimas. Con `--no-semgrep-metrics` no hay métricas. |
 | ZAP | los servidores de ZAP | Descargar las reglas pasivas beta al arrancar. |
+| Nmap | el host que escaneas | Conectarse a sus puertos. No contacta con nadie más. |
 | Gitleaks | nadie | Corre sin red. |
 
 Nada del contenido de tus repos se guarda fuera de lo que pides.
