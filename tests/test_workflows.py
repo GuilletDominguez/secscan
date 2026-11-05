@@ -150,3 +150,16 @@ def test_dependabot_keeps_the_pinned_actions_up_to_date_with_a_cooldown():
 def test_trivy_cache_key_is_refreshed_daily():
     cache = next(s for s in steps_of(ACTION) if s.get("uses", "").startswith("actions/cache@"))
     assert "steps.day.outputs.day" in cache["with"]["key"]
+
+
+def test_no_expression_appears_in_the_descriptions_of_the_action_metadata():
+    """El runner de GitHub evalúa `${{ }}` también en las descripciones del action.yml, donde el contexto `github` no
+    existe: un ejemplo escrito ahí («p. ej. ${{ github.actor }}») hace que la action entera no cargue. actionlint no
+    revisa estos campos, y esto solo se vio en la primera ejecución real."""
+    action = load(ACTION)
+
+    texts = {"description": action["description"]}
+    texts.update({f"inputs.{name}.description": spec["description"] for name, spec in action["inputs"].items()})
+    texts.update({f"outputs.{name}.description": spec["description"] for name, spec in action["outputs"].items()})
+    for where, text in texts.items():
+        assert "${{" not in text, f"{where} lleva una expresión: el runner la evaluaría y fallaría"

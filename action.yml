@@ -49,7 +49,7 @@ inputs:
   signed-by:
     description: >-
       Quién firma el informe (aparece en el HTML y el Markdown). Lo decide quien instala la action; por
-      defecto, nadie. Por ejemplo `${{ github.repository_owner }}` o el nombre de tu equipo.
+      defecto, nadie. Puede ser tu nombre o el de tu equipo.
     default: ""
   category:
     description: Categoría del SARIF; distinta por cada ejecución de secscan en el mismo repo (p. ej. con matriz).
