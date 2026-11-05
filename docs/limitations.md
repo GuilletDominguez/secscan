@@ -76,6 +76,9 @@ tiempo de ejecución, cumplimiento normativo.
 - El alcance (mismo esquema, host, puerto y ruta) se ha probado con ZAP 2.17 y servidores que registraban peticiones:
   enlaces a otro puerto, a una ruta hermana y redirecciones 302 hacia otro puerto. No se ha probado con un DNS que
   cambie durante el escaneo ni con redirecciones a otro host; en ese caso solo protege la IP que se fijó al validar.
+- Se ha probado contra una web real en producción (una aplicación de una sola página detrás de Cloudflare), dos veces
+  y con resultados casi iguales. Solo se examinó la portada y sus ficheros estáticos: la parte que carga con JavaScript
+  o exige sesión no se vio. Que salga bien en un sitio no demuestra que salga bien en cualquier otro.
 - Se niega a escanear direcciones de enlace local (`169.254.x.x`, el metadata de la nube), sin especificar o multicast,
   aunque pases `--i-own-this`. Un nombre que resuelva a `127.0.0.1` pero no sea `localhost` también exige
   `--i-own-this`.
@@ -93,8 +96,11 @@ tiempo de ejecución, cumplimiento normativo.
 
 ## GitHub Action
 
-- **No se ha probado en GitHub.** Está validada con `actionlint` y `zizmor`, con tests de lo que garantiza y con sus
-  scripts ejecutados en local. La primera ejecución real puede dar algún fallo.
+- **Se ha probado en GitHub**, con ejecuciones reales en pushes y pull requests (también en los que abre Dependabot):
+  en este mismo repo, donde sube el SARIF a la pestaña de seguridad y comenta en el PR, y en tres repositorios
+  privados. Además está validada con `actionlint` y `zizmor`, y con tests de lo que garantiza. Sigue **sin probarse**:
+  un PR de un fork (debería omitir el comentario y el SARIF), la subida del SARIF en un repo privado con Advanced
+  Security, `history: "true"` y varias ejecuciones con distinta `category`.
 - Solo lanza `scan`. `web` e `image` necesitan una aplicación en marcha o una imagen construida, y no están en la
   action.
 - En un PR de un fork el token es de solo lectura: no hay comentario ni subida a la pestaña de seguridad. El resumen del

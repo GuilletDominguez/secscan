@@ -79,7 +79,8 @@ jobs:
 ```
 
 Fija siempre el commit y usa `pull_request`, nunca `pull_request_target`. Todas las entradas, los pasos para instalarla
-y varias recetas están en [docs/configuration.md](docs/configuration.md). La action no se ha probado todavía en GitHub.
+y varias recetas están en [docs/configuration.md](docs/configuration.md). La action se ha probado en GitHub, en este repo y en tres repositorios privados; lo que sigue sin probarse está en
+[docs/limitations.md](docs/limitations.md).
 
 ## Ignorar falsos positivos
 
