@@ -79,7 +79,7 @@ jobs:
 ```
 
 Fija siempre el commit y usa `pull_request`, nunca `pull_request_target`. Todas las entradas, los pasos para instalarla
-y varias recetas están en [docs/configuracion.md](docs/configuracion.md). La action no se ha probado todavía en GitHub.
+y varias recetas están en [docs/configuration.md](docs/configuration.md). La action no se ha probado todavía en GitHub.
 
 ## Ignorar falsos positivos
 
@@ -96,9 +96,9 @@ ignore:
 
 ## Más información
 
-- [Configuración](docs/configuracion.md): todas las opciones, los formatos, la action y qué contacta con internet.
-- [Limitaciones](docs/limitaciones.md): lo que no hace, lo que no se ha probado y los fallos conocidos.
-- [Decisiones de diseño](docs/diseno.md): por qué se hace cada cosa así, sobre todo en seguridad.
+- [Configuración](docs/configuration.md): todas las opciones, los formatos, la action y qué contacta con internet.
+- [Limitaciones](docs/limitations.md): lo que no hace, lo que no se ha probado y los fallos conocidos.
+- [Decisiones de diseño](docs/design.md): por qué se hace cada cosa así, sobre todo en seguridad.
 
 ## Licencia y uso libre
 

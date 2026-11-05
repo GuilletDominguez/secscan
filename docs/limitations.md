@@ -1,7 +1,7 @@
 # Limitaciones
 
 Lo que `secscan` no hace o hace a medias. Está escrito con lo que se ha comprobado, y dice cuándo algo no se ha
-probado. Para ajustar lo que sí se puede ajustar, mira [configuracion.md](configuracion.md).
+probado. Para ajustar lo que sí se puede ajustar, mira [configuration.md](configuration.md).
 
 ## No es una auditoría
 

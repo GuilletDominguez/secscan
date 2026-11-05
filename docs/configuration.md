@@ -1,7 +1,7 @@
 # Configuración
 
 Todo lo que se puede ajustar, con sus valores por defecto. Para lo que no hace la herramienta, mira
-[limitaciones.md](limitaciones.md).
+[limitations.md](limitations.md).
 
 ## Comandos y opciones
 
