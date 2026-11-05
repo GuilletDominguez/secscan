@@ -105,6 +105,11 @@ ignore:
 | `json` | Todos los datos: `findings`, `scanned`, `errors`, `warnings`, `alerts`, `hostile_hits`, `suppressed`, `signed_by`… |
 | `sarif` | Para la pestaña de seguridad de GitHub y otras herramientas. |
 
+La fecha de «Generado» sale en hora de Madrid, con un paréntesis que lo indica («5 de noviembre de 2026, 13:29 (hora de
+Madrid)»), en el HTML y en el Markdown, y por tanto también en el comentario que publica la action en el PR y en el
+resumen del job. El horario de verano se aplica solo. El JSON la guarda en UTC (`scanned_at`, formato ISO 8601), para
+quien lo lea una máquina.
+
 Ningún informe lleva la ruta completa de tu máquina: el HTML, el Markdown y el JSON guardan solo el nombre de la
 carpeta escaneada, y el SARIF usa rutas relativas. Todo el texto que viene del repo o de la web escaneados se escapa
 antes de mostrarlo.

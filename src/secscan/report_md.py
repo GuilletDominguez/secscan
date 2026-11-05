@@ -3,7 +3,7 @@
 import re
 
 from secscan.models import Finding, ScanResult
-from secscan.report import LABELS, display_name, grouped, shown_hits
+from secscan.report import LABELS, display_name, generated_label, grouped, shown_hits
 
 ZERO_WIDTH_SPACE = "\u200b"
 _SPECIAL = re.compile(r"([\\`*_{}\[\]()#+!|~>])")
@@ -34,7 +34,8 @@ def to_markdown(result: ScanResult) -> str:
     lines = [f"# Informe de seguridad · {escape(display_name(result))}", ""]
     meta = []
     if result.scanned_at:
-        meta.append(f"Generado: {result.scanned_at}")  # lo genera secscan: no es entrada no confiable
+        # Hora de Madrid, ya convertida por secscan (no es entrada no confiable). Si no fuera una fecha, se escapa.
+        meta.append(f"Generado: {generated_label(result.scanned_at) or escape(result.scanned_at)}")
     if result.scanned:
         meta.append("Herramientas: " + ", ".join(escape(tool) for tool in result.scanned))
     if meta:

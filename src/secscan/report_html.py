@@ -4,7 +4,7 @@ from html import escape as _escape
 from importlib.metadata import PackageNotFoundError, version
 
 from secscan.models import Finding, ScanResult, Severity
-from secscan.report import LABELS, display_name, grouped, shown_hits
+from secscan.report import LABELS, display_name, generated_label, grouped, shown_hits
 
 MAX_SNIPPET = 400
 MAX_DESCRIPTION = 600
@@ -165,7 +165,7 @@ def to_html(result: ScanResult) -> str:
     meta = " · ".join(
         part
         for part in (
-            f"Generado: {esc(result.scanned_at)}" if result.scanned_at else "",
+            f"Generado: {esc(generated_label(result.scanned_at) or result.scanned_at)}" if result.scanned_at else "",
             "Herramientas: " + ", ".join(esc(t) for t in result.scanned) if result.scanned else "",
             f"{result.suppressed} ignorados por .secscan.yml" if result.suppressed else "",
         )

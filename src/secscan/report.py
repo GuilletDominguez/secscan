@@ -1,6 +1,8 @@
 """Salidas: tabla en terminal, JSON y SARIF."""
 
 import json
+from datetime import UTC, datetime
+from zoneinfo import ZoneInfo
 
 from rich.console import Console
 from rich.markup import escape
@@ -22,6 +24,29 @@ LABELS = {
     Severity.LOW: "Baja",
     Severity.INFO: "Info",
 }
+
+
+MADRID = ZoneInfo("Europe/Madrid")
+MONTHS = (
+    "enero", "febrero", "marzo", "abril", "mayo", "junio",
+    "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
+)  # fmt: skip
+
+
+def generated_label(scanned_at: str) -> str | None:
+    """La fecha del escaneo para personas: hora de Madrid, con el paréntesis que avisa de que es esa hora.
+
+    `scanned_at` se guarda en ISO 8601 y UTC (el JSON lo conserva así, para las máquinas). Aquí se convierte, y
+    zoneinfo se encarga del horario de verano. Devuelve None si no es una fecha: quien llama decide qué mostrar.
+    """
+    try:
+        moment = datetime.fromisoformat(scanned_at)
+    except ValueError:
+        return None
+    if moment.tzinfo is None:  # sin zona: secscan siempre guarda UTC
+        moment = moment.replace(tzinfo=UTC)
+    local = moment.astimezone(MADRID)
+    return f"{local.day} de {MONTHS[local.month - 1]} de {local.year}, {local:%H:%M} (hora de Madrid)"
 
 
 def grouped(result: ScanResult) -> list[tuple[Severity, list]]:

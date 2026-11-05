@@ -156,3 +156,70 @@ class TestGithubNotificationsAreNeutralized:
         )
 
         assert not re.search(r"@(?!​)\w", md) and not re.search(r"(?<!\\)#(?!​)\d", md)
+
+
+class TestGeneratedTimeIsShownInMadridTime:
+    """«Generado» sale en hora de Madrid, con un paréntesis que avisa de que está convertida. El JSON sigue en UTC.
+
+    El comentario que publica github-actions en el PR (y el resumen del job) es este mismo Markdown."""
+
+    @staticmethod
+    def label(iso):
+        from secscan.report import generated_label
+
+        return generated_label(iso)
+
+    def test_winter_is_one_hour_ahead_of_utc(self):
+        assert self.label("2026-11-05T12:29:08+00:00") == "5 de noviembre de 2026, 13:29 (hora de Madrid)"
+
+    def test_summer_time_is_two_hours_ahead(self):
+        assert self.label("2026-07-15T12:00:00+00:00") == "15 de julio de 2026, 14:00 (hora de Madrid)"
+
+    def test_the_day_and_the_year_roll_over(self):
+        assert self.label("2026-12-31T23:30:00+00:00") == "1 de enero de 2027, 00:30 (hora de Madrid)"
+
+    def test_the_clock_change_days_are_handled_by_the_timezone_database(self):
+        # El último domingo de octubre de 2026 (día 25) se vuelve al horario de invierno a la 01:00 UTC.
+        assert self.label("2026-10-25T00:30:00+00:00") == "25 de octubre de 2026, 02:30 (hora de Madrid)"
+        assert self.label("2026-10-25T01:30:00+00:00") == "25 de octubre de 2026, 02:30 (hora de Madrid)"
+        # El último domingo de marzo (día 29) se pasa al de verano.
+        assert self.label("2026-03-29T00:30:00+00:00") == "29 de marzo de 2026, 01:30 (hora de Madrid)"
+        assert self.label("2026-03-29T01:30:00+00:00") == "29 de marzo de 2026, 03:30 (hora de Madrid)"
+
+    def test_a_time_with_another_offset_is_converted_too(self):
+        assert self.label("2026-11-05T13:29:08+01:00") == "5 de noviembre de 2026, 13:29 (hora de Madrid)"
+
+    def test_without_a_zone_it_is_taken_as_utc(self):
+        assert self.label("2026-11-05T12:29:08") == "5 de noviembre de 2026, 13:29 (hora de Madrid)"
+
+    def test_something_that_is_not_a_date_gives_nothing(self):
+        assert self.label("basura") is None and self.label("") is None
+
+    def test_markdown_and_html_show_it(self):
+        text = "Generado: 5 de noviembre de 2026, 11:00 (hora de Madrid)"
+        both = result(scanned_at="2026-11-05T10:00:00+00:00")
+
+        assert text in to_markdown(both) and text in to_html(both)
+        assert "2026-11-05T10:00:00" not in to_markdown(both) + to_html(both)  # ya no sale el ISO
+
+    def test_text_that_is_not_a_date_is_shown_escaped(self):
+        hostile = result(scanned_at="<script>alert(1)</script> @alguien")
+
+        assert "<script>" not in to_markdown(hostile) and "<script>" not in to_html(hostile)
+        assert "&lt;script&gt;" in to_html(hostile)
+
+    def test_the_json_keeps_the_machine_friendly_iso_utc(self):
+        import json
+
+        from secscan.report import to_json
+
+        assert json.loads(to_json(result(scanned_at="2026-11-05T10:00:00+00:00")))["scanned_at"] == "2026-11-05T10:00:00+00:00"
+
+    def test_the_scan_still_stores_utc(self, tmp_path):
+        from datetime import datetime
+
+        from secscan.config import Config
+        from secscan.scanner import build_result
+
+        stored = datetime.fromisoformat(build_result(tmp_path, {}, {}, Config()).scanned_at)
+        assert stored.utcoffset().total_seconds() == 0
