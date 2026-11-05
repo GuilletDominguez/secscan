@@ -10,20 +10,19 @@ def read(name):
     return (ROOT / name).read_text(encoding="utf-8")
 
 
-def test_the_security_file_offers_no_contact_channel_and_says_the_tool_is_not_an_audit():
-    text = read("SECURITY.md")
-
-    assert "uso libre" in text and "No es una auditoría" in text and "sin garantía" in text
-    # Nadie a quien avisar: ni correo ni canal privado de GitHub.
-    assert "@" not in text and "mailto:" not in text and "Report a vulnerability" not in text
+def test_there_are_no_policy_files_that_ask_anyone_to_notify_anyone():
+    # Es una herramienta de uso libre: no hay a quién avisar. Sin SECURITY.md, GitHub tampoco muestra «Security policy».
+    for name in ("SECURITY.md", "CONTRIBUTING.md", "CODE_OF_CONDUCT.md"):
+        assert not (ROOT / name).exists(), name
 
 
-def test_contributing_is_short_and_keeps_the_rules_the_tests_enforce():
-    text = read("CONTRIBUTING.md")
+def test_the_license_is_the_unlicense_and_names_nobody():
+    text = read("LICENSE")
+    project = tomllib.loads(read("pyproject.toml"))["project"]
 
-    for rule in ("inventados", "pull_request_target", "fijadas por commit", "se escapa"):
-        assert rule in text, rule
-    assert len(text.splitlines()) < 25  # unas pocas líneas, no un reglamento
+    assert text.startswith("This is free and unencumbered software released into the public domain.")
+    assert "AS IS" in text and "Copyright" not in text  # sin titular: no hay nombre que poner
+    assert project["license"] == "Unlicense" and project["license-files"] == ["LICENSE"]
 
 
 def test_line_endings_are_normalized_and_fixtures_are_marked_as_generated():
@@ -31,10 +30,10 @@ def test_line_endings_are_normalized_and_fixtures_are_marked_as_generated():
     assert "* text=auto eol=lf" in text and "tests/fixtures/** linguist-generated=true" in text
 
 
-def test_the_readme_explains_requirements_and_where_it_was_tested():
+def test_the_readme_explains_requirements_license_and_where_it_was_tested():
     text = read("README.md")
 
-    for fragment in ("## Requisitos e instalación", "**Docker**", "Probado solo en Linux", "## Uso libre", "SECURITY.md", "CONTRIBUTING.md"):
+    for fragment in ("## Requisitos e instalación", "**Docker**", "Probado solo en Linux", "## Licencia y uso libre", "(LICENSE)"):
         assert fragment in text, fragment
 
 
@@ -44,6 +43,7 @@ def test_the_package_metadata_makes_no_claim_it_cannot_back():
     assert "Operating System :: POSIX :: Linux" in project["classifiers"]
     assert not any("Windows" in c or "MacOS" in c for c in project["classifiers"])  # no se ha probado
     assert "authors" not in project and "urls" not in project  # sin identidad ni enlaces personales
+    assert not any(c.startswith("License ::") for c in project["classifiers"])  # con `license` SPDX no se usan
 
 
 def test_nothing_is_published_that_a_fresh_clone_would_not_need():

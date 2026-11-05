@@ -186,13 +186,19 @@ ignore:
 - Que ZAP no sale del alcance se comprobó con ZAP real contra servidores que registran peticiones: enlaces a otro puerto, enlaces a una ruta hermana (`/app` frente a `/application`) y redirecciones 302 hacia otro puerto. No se probó con un DNS que cambie durante el escaneo ni con redirecciones a otro *host*; en ese caso solo protege la IP fijada.
 - ZAP descarga las reglas pasivas beta al arrancar: el escaneo web necesita red hacia los servidores de ZAP, y si esa descarga falla se ejecuta sin ellas (sin aviso).
 
-## Uso libre
+## Licencia y uso libre
 
-Es una herramienta de uso libre, sin garantía ni soporte, y sus resultados no son una auditoría: mira
-[SECURITY.md](SECURITY.md). Si quieres tocar el código, [CONTRIBUTING.md](CONTRIBUTING.md).
+Dominio público ([Unlicense](LICENSE)): copia, modifica, vende o usa esto para lo que quieras, sin pedir permiso ni
+citar a nadie. Va sin garantía ni soporte, y sus resultados no son una auditoría: que no salga nada no quiere decir
+que no haya nada, y lo que salga puede ser un falso positivo. Escanea solo lo tuyo o lo que tengas permiso para
+revisar: el escaneo web envía peticiones al sistema.
 
 ## Tests
 
 ```bash
 uv run pytest
 ```
+
+Algunos tests vigilan reglas del proyecto, no solo el código: los ficheros de `tests/fixtures` salen de proyectos
+inventados, el proyecto no lleva el nombre, el correo ni la ruta de nadie, y los workflows usan `pull_request`
+(nunca `pull_request_target`) con las actions fijadas por commit.

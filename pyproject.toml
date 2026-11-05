@@ -3,6 +3,8 @@ name = "secscan"
 version = "0.1.0"
 description = "Escáner de seguridad unificado: secretos, código, librerías y configuración"
 readme = "README.md"
+license = "Unlicense"
+license-files = ["LICENSE"]
 requires-python = ">=3.13"
 keywords = ["security", "devsecops", "sast", "sca", "secrets", "dast", "docker", "sarif"]
 classifiers = [
