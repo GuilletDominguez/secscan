@@ -1,6 +1,7 @@
 """Modelo, configuración, orquestador, informes y CLI."""
 
 import json
+from pathlib import Path
 
 import pytest
 from typer.testing import CliRunner
@@ -160,3 +161,48 @@ class TestMarkupInjection:
 
         assert hostile in buffer.getvalue().replace("\n", " ")
         assert "[red]r" in buffer.getvalue() and "a/[b].py" in buffer.getvalue()
+
+
+class TestStrictConfig:
+    """Una errata en `.secscan.yml` no debe parecer que funciona y no ignorar nada."""
+
+    @pytest.mark.parametrize(
+        "text",
+        [
+            "ignore:\n  rulez: [x]\n",  # errata en una clave
+            "ignores:\n  rules: [x]\n",  # errata en la raíz
+            "ignore:\n  findings:\n    - id: abc\n      reason: ok\n      motivo: otra cosa\n",  # clave de más
+        ],
+    )
+    def test_unknown_keys_are_an_error(self, tmp_path, text):
+        (tmp_path / ".secscan.yml").write_text(text)
+
+        with pytest.raises(ConfigError, match="no es válido"):
+            load_config(tmp_path)
+
+    def test_a_correct_file_still_loads(self, tmp_path):
+        (tmp_path / ".secscan.yml").write_text(
+            "ignore:\n  paths: ['**/tests/**']\n  rules: [x]\n  findings:\n    - id: abc\n      reason: ok\n"
+        )
+        assert load_config(tmp_path).ignore.rules == ["x"]
+
+
+class TestTargetKeepsNoLocalPath:
+    def test_the_result_stores_only_the_folder_name_not_the_full_path(self, tmp_path):
+        folder = tmp_path / "usuario" / "mi-proyecto"
+        folder.mkdir(parents=True)
+
+        result = build_result(folder, {}, {}, Config())
+
+        assert result.target == "mi-proyecto"
+        assert str(tmp_path) not in to_json(result)  # ni en el JSON que se comparte
+
+    def test_the_root_folder_does_not_end_up_empty(self):
+        assert build_result(Path("/"), {}, {}, Config()).target == "/"
+
+    def test_the_display_name_in_the_reports_is_unchanged(self, tmp_path):
+        from secscan.report import display_name
+
+        folder = tmp_path / "mi-proyecto"
+        folder.mkdir()
+        assert display_name(build_result(folder, {}, {}, Config())) == "mi-proyecto"

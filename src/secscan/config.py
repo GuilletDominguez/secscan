@@ -13,25 +13,36 @@ Ejemplo:
 from pathlib import Path, PurePosixPath
 
 import yaml
-from pydantic import BaseModel, Field, ValidationError, model_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 from secscan.models import Finding
 
 CONFIG_FILE = ".secscan.yml"
 
 
+# Una clave que no existe (`rulez:` en vez de `rules:`) es un error, no algo que se ignora en silencio:
+# si no, el triaje parecería funcionar y no estaría ignorando nada.
+STRICT = ConfigDict(extra="forbid")
+
+
 class IgnoredFinding(BaseModel):
+    model_config = STRICT
+
     id: str
     reason: str  # obligatorio: una supresión sin justificación es una deuda oculta
 
 
 class Ignore(BaseModel):
+    model_config = STRICT
+
     paths: list[str] = Field(default_factory=list)
     rules: list[str] = Field(default_factory=list)
     findings: list[IgnoredFinding] = Field(default_factory=list)
 
 
 class Config(BaseModel):
+    model_config = STRICT
+
     ignore: Ignore = Field(default_factory=Ignore)
 
     @model_validator(mode="before")

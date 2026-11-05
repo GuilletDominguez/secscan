@@ -53,7 +53,9 @@ def build_result(
     # Solo lo que acabará en el informe: los hallazgos ignorados no se muestran.
     alerts, hits = find_hostile_content(kept, errors, warnings or [], scanned)
     return ScanResult(
-        target=str(target),
+        # Solo el nombre de la carpeta: la ruta completa lleva el usuario y la estructura de la máquina, y ningún
+        # informe la necesita (el HTML y el Markdown ya mostraban solo el nombre).
+        target=target.name or str(target),
         scanned_at=datetime.now(UTC).isoformat(timespec="seconds"),
         findings=sorted(kept, key=_sort_key),
         scanned=scanned,
