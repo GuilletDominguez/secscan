@@ -13,8 +13,9 @@ from secscan.runners.base import Runner, RunnerError, RunnerOutput
 from secscan.runners.gitleaks import GitleaksRunner
 from secscan.runners.semgrep import SemgrepRunner
 from secscan.runners.trivy import TrivyImageRunner, TrivyRunner
+from secscan.runners.nmap import NmapRunner
 from secscan.runners.zap import ZapRunner
-from secscan.targets import WebTarget
+from secscan.targets import HostTarget, WebTarget
 
 RUNNERS: dict[str, type[Runner]] = {
     "gitleaks": GitleaksRunner,
@@ -119,4 +120,10 @@ def scan_web(target: WebTarget, config: Config, minutes: int = 1) -> ScanResult:
 def scan_image(image: str, config: Config) -> ScanResult:
     result = _scan_one(TrivyImageRunner(image), image, config)
     result.target = image
+    return result
+
+
+def scan_ports(target: HostTarget, config: Config, ports: str | None = None, versions: bool = False) -> ScanResult:
+    result = _scan_one(NmapRunner(target, ports, versions), target.host, config)
+    result.target = target.host
     return result
