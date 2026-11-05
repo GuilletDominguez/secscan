@@ -4,6 +4,14 @@ version = "0.1.0"
 description = "Escáner de seguridad unificado: secretos, código, librerías y configuración"
 readme = "README.md"
 requires-python = ">=3.13"
+keywords = ["security", "devsecops", "sast", "sca", "secrets", "dast", "docker", "sarif"]
+classifiers = [
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Security",
+]
 dependencies = [
     "pydantic>=2.14.3",
     "pyyaml>=6.0.3",

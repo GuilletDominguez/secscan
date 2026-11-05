@@ -10,6 +10,25 @@ Escáner de seguridad unificado. Ejecuta herramientas open source en contenedore
 | Una aplicación web en ejecución (cabeceras, cookies, formularios…) | OWASP ZAP | `web` |
 | Una imagen de contenedor (paquetes del sistema, dependencias, secretos en capas) | Trivy | `image` |
 
+## Requisitos e instalación
+
+- **Docker**, con el demonio accesible para tu usuario: todas las herramientas se ejecutan en contenedores.
+- **Python 3.13 o superior** y [`uv`](https://docs.astral.sh/uv/) (que descarga Python si hace falta).
+- **Probado solo en Linux.** En Windows no funciona (usa `os.getuid`) y en macOS con Docker Desktop no se ha probado, en
+  especial el escaneo web de `localhost`, que usa `--network host`.
+
+```bash
+git clone https://github.com/<propietario>/secscan && cd secscan
+uv sync
+uv run secscan --help
+
+# o como herramienta global, sin clonar:
+uv tool install git+https://github.com/<propietario>/secscan
+```
+
+La primera ejecución descarga las imágenes de Gitleaks, Semgrep, Trivy (y ZAP para `web`) y la base de datos de
+vulnerabilidades de Trivy (~130 MB). En CI, Docker Hub limita las descargas anónimas por IP.
+
 ## Uso
 
 ```bash
@@ -166,6 +185,10 @@ ignore:
 - Mientras corre `web` contra `localhost`, ZAP abre puertos en `127.0.0.1` (sin autenticar): no lo uses en una máquina compartida con usuarios en los que no confíes.
 - Que ZAP no sale del alcance se comprobó con ZAP real contra servidores que registran peticiones: enlaces a otro puerto, enlaces a una ruta hermana (`/app` frente a `/application`) y redirecciones 302 hacia otro puerto. No se probó con un DNS que cambie durante el escaneo ni con redirecciones a otro *host*; en ese caso solo protege la IP fijada.
 - ZAP descarga las reglas pasivas beta al arrancar: el escaneo web necesita red hacia los servidores de ZAP, y si esa descarga falla se ejecuta sin ellas (sin aviso).
+
+## Seguridad y contribuciones
+
+Para avisar de una vulnerabilidad, mira [SECURITY.md](SECURITY.md). Para contribuir, [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Tests
 

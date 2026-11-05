@@ -1,0 +1,5 @@
+# Finales de línea siempre LF: los scripts de la action y los fixtures no deben cambiar según el sistema.
+* text=auto eol=lf
+
+# Salidas guardadas de las herramientas: GitHub las pliega en los diffs y no cuentan para las estadísticas del lenguaje.
+tests/fixtures/** linguist-generated=true
