@@ -65,13 +65,19 @@ def build_result(
     )
 
 
-def make_runner(name: str, history: bool) -> Runner:
-    # `history` solo tiene sentido para Gitleaks (revisar todos los commits).
-    return GitleaksRunner(history=history) if name == "gitleaks" else RUNNERS[name]()
+def make_runner(name: str, history: bool, semgrep_metrics: bool = True) -> Runner:
+    # `history` solo tiene sentido para Gitleaks (revisar todos los commits) y `semgrep_metrics` para Semgrep.
+    if name == "gitleaks":
+        return GitleaksRunner(history=history)
+    if name == "semgrep":
+        return SemgrepRunner(metrics=semgrep_metrics)
+    return RUNNERS[name]()
 
 
-def scan(target: Path, tools: Sequence[str], config: Config, history: bool = False) -> ScanResult:
-    runners = [make_runner(name, history) for name in tools]
+def scan(
+    target: Path, tools: Sequence[str], config: Config, history: bool = False, semgrep_metrics: bool = True
+) -> ScanResult:
+    runners = [make_runner(name, history, semgrep_metrics) for name in tools]
     outputs: dict[str, RunnerOutput] = {}
     errors: dict[str, str] = {}
 

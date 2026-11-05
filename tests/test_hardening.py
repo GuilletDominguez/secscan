@@ -229,3 +229,60 @@ class TestCleanClone:
         assert (out / MIRROR_NAME).is_dir()  # el clon se hizo
         assert not (out / "EJECUTADO").exists()  # y el script del repo no se ejecutó
         assert "evil" not in (out / MIRROR_NAME / "config").read_text()
+
+
+class TestSemgrepMetrics:
+    """`--config auto` exige las métricas (con --metrics off falla), así que sin ellas se usa un conjunto fijo."""
+
+    def test_by_default_nothing_changes(self):
+        args = SemgrepRunner().args()
+
+        assert args[args.index("--config") + 1] == "auto"
+        assert "--metrics" not in args and "--disable-version-check" not in args
+
+    def test_without_metrics_it_uses_a_fixed_ruleset_and_never_auto(self):
+        args = SemgrepRunner(metrics=False).args()
+
+        assert args[args.index("--config") + 1] == "p/default" and "auto" not in args
+        assert args[args.index("--metrics") + 1] == "off"
+        assert "--disable-version-check" in args  # la comprobación de versión es otro contacto con semgrep.dev
+
+    def test_the_rest_of_the_command_is_the_same_in_both_modes(self):
+        on, off = SemgrepRunner(metrics=True).args(), SemgrepRunner(metrics=False).args()
+        keep = lambda args: [a for a in args if a not in {"auto", "p/default", "off", "--metrics", "--disable-version-check", "--config"}]  # noqa: E731
+
+        assert keep(on) == keep(off) and on[-1] == "/target"
+
+    def test_the_scanner_passes_it_only_to_semgrep(self):
+        from secscan.runners.trivy import TrivyRunner
+        from secscan.scanner import make_runner
+
+        assert make_runner("semgrep", False, semgrep_metrics=False).metrics is False
+        assert make_runner("semgrep", False).metrics is True
+        assert isinstance(make_runner("trivy", False, semgrep_metrics=False), TrivyRunner)
+
+    def test_the_cli_flag_reaches_the_scan(self, monkeypatch, tmp_path):
+        from typer.testing import CliRunner
+
+        from secscan import cli
+        from secscan.models import ScanResult
+
+        seen = []
+        monkeypatch.setattr(cli, "scan", lambda *a, **k: seen.append(k["semgrep_metrics"]) or ScanResult(target="x"))
+        runner = CliRunner()
+        for flag in (None, "--no-semgrep-metrics", "--semgrep-metrics"):
+            runner.invoke(cli.app, ["scan", str(tmp_path), "--fail-on", "none", *([flag] if flag else [])])
+
+        assert seen == [True, False, True]  # por defecto se mantiene el comportamiento de siempre
+
+    def test_the_action_input_is_on_by_default_and_travels_through_the_environment(self):
+        import yaml
+
+        root = Path(__file__).resolve().parent.parent
+        action = yaml.safe_load((root / "action.yml").read_text(encoding="utf-8"))
+        scan = next(s for s in action["runs"]["steps"] if s.get("id") == "scan")
+
+        assert action["inputs"]["semgrep-metrics"]["default"] == "true"
+        assert scan["env"]["INPUT_SEMGREP_METRICS"] == "${{ inputs.semgrep-metrics }}"
+        assert '[ "$INPUT_SEMGREP_METRICS" = "false" ]' in scan["run"] and "--no-semgrep-metrics" in scan["run"]
+        assert "${{" not in scan["run"]

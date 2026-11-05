@@ -146,6 +146,14 @@ def scan_command(
     report_dir: ReportDirOpt = None,
     signed_by: SignedByOpt = "",
     history: Annotated[bool, typer.Option("--history", help="Gitleaks revisa también todos los commits (más lento).")] = False,
+    semgrep_metrics: Annotated[
+        bool,
+        typer.Option(
+            "--semgrep-metrics/--no-semgrep-metrics",
+            help="Con --no-semgrep-metrics, Semgrep no envía métricas ni comprueba su versión; usa el conjunto de "
+            "reglas p/default (--config auto las exige).",
+        ),
+    ] = True,
 ) -> None:
     selected = [name.strip() for name in tools.split(",") if name.strip()]
     unknown = [name for name in selected if name not in RUNNERS]
@@ -160,7 +168,7 @@ def scan_command(
         raise typer.Exit(2) from None
 
     err.print(f"Escaneando {escape(str(path))} con {', '.join(selected)}…")
-    result = scan(path, selected, config, history=history)
+    result = scan(path, selected, config, history=history, semgrep_metrics=semgrep_metrics)
 
     _emit(result, output_format, output, report_dir, fail_on, signed_by)
 

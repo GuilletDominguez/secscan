@@ -20,6 +20,7 @@ uv run secscan scan ./mi-repo --report-dir ./informe  # informe.html + .md + .js
 uv run secscan scan ./mi-repo --format html -o informe.html
 uv run secscan scan ./mi-repo --tools semgrep,trivy --fail-on medium
 uv run secscan scan ./mi-repo --history             # Gitleaks revisa también todos los commits (requiere un `.git` real)
+uv run secscan scan ./mi-repo --no-semgrep-metrics  # Semgrep sin métricas ni comprobación de versión
 ```
 
 ### Web y contenedores
@@ -78,7 +79,7 @@ jobs:
           signed-by: ${{ github.repository_owner }}   # opcional: quién firma el informe
 ```
 
-En cada PR la action comenta el resumen (y lo mantiene actualizado en cada push), sube los hallazgos a la pestaña de seguridad, guarda el informe completo como artefacto, lo copia al resumen del job y **falla si hay hallazgos de la severidad de `fail-on` o si una herramienta no pudo ejecutarse**. Entradas: `path`, `tools`, `fail-on`, `history`, `upload-sarif`, `comment-on-pr`, `report-dir`, `artifact-name`, `signed-by` y `category`.
+En cada PR la action comenta el resumen (y lo mantiene actualizado en cada push), sube los hallazgos a la pestaña de seguridad, guarda el informe completo como artefacto, lo copia al resumen del job y **falla si hay hallazgos de la severidad de `fail-on` o si una herramienta no pudo ejecutarse**. Entradas: `path`, `tools`, `fail-on`, `history`, `semgrep-metrics`, `upload-sarif`, `comment-on-pr`, `report-dir`, `artifact-name`, `signed-by` y `category`.
 
 Decisiones de seguridad, pensadas para un workflow que procesa código de terceros:
 
@@ -109,7 +110,7 @@ La firma aparece en el HTML, el Markdown y el JSON (`signed_by`). En la action, 
 - **En tu máquina**: los directorios temporales (el `.tar` de una imagen, los informes intermedios, el clon de `--history`) se borran al terminar. Quedan los informes que tú pides y la caché de la base de datos de Trivy (`~/.cache/secscan/trivy`), que no contiene datos de tus repos, y las imágenes de Docker descargadas.
 - **Los informes se quedan en local y no se versionan.** `--report-dir` deja dentro de la carpeta un `.gitignore` con `*` (como hacen `pytest` o `ruff` con sus cachés), así que en cualquier repo esa carpeta se ignora sola y `secscan` no modifica ningún fichero del repo analizado. Este proyecto además ignora los nombres que genera (`secscan-report.*`, `informe*/`). Con `-o fichero.md` el nombre lo eliges tú: añádelo a tu `.gitignore`.
 - **La GitHub Action sí publica el informe, en GitHub**: lo comenta en el PR, lo sube como artefacto (14 días), lo copia al resumen del job y sube el SARIF a la pestaña de seguridad. Si no quieres alguna de esas salidas, desactívalas con `comment-on-pr: "false"` y `upload-sarif: "false"`; el artefacto y el resumen del job siguen siendo visibles para quien tenga acceso al repo.
-- **Hacia fuera**: `semgrep --config auto` descarga las reglas y envía métricas anónimas a Semgrep; Trivy y ZAP descargan sus bases de datos y reglas. Si eso no es aceptable, `secscan` aún no permite desactivarlo.
+- **Hacia fuera**: `semgrep --config auto` descarga las reglas y envía métricas anónimas a Semgrep; Trivy y ZAP descargan sus bases de datos y reglas. Con `--no-semgrep-metrics` (o `semgrep-metrics: "false"` en la action) Semgrep **no envía métricas ni comprueba su versión**. `--config auto` las exige (con `--metrics off` falla), así que en ese modo se usa el conjunto de reglas fijo `p/default`: los hallazgos pueden diferir de los de `auto`, y las reglas se siguen descargando del registro de Semgrep (no hay modo totalmente sin red). Es un cambio de comportamiento, por eso no es el valor por defecto.
 
 ## Informes
 

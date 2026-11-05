@@ -59,14 +59,29 @@ def parse_semgrep(sarif: dict, root: str = CONTAINER_ROOT) -> list[Finding]:
     return findings
 
 
+# Conjunto de reglas del registro que se usa sin métricas. `--config auto` las exige («Cannot create auto
+# config when metrics are off»), así que no se puede desactivar las métricas y conservar `auto`.
+NO_METRICS_RULES = "p/default"
+
+
 class SemgrepRunner(Runner):
     name = "semgrep"
     image = "semgrep/semgrep"
 
+    def __init__(self, metrics: bool = True):
+        # metrics=True (por defecto): `--config auto`, que descarga las reglas y envía métricas anónimas a Semgrep.
+        # metrics=False: el conjunto fijo `p/default`, `--metrics off` y sin la comprobación de versión
+        # (otro contacto con semgrep.dev). Las reglas se siguen descargando del registro.
+        self.metrics = metrics
+
+    def _rules_args(self) -> list[str]:
+        if self.metrics:
+            return ["--config", "auto"]
+        return ["--config", NO_METRICS_RULES, "--metrics", "off", "--disable-version-check"]
+
     def args(self) -> list[str]:
-        # `--config auto` descarga las reglas de internet y envía métricas anónimas a Semgrep.
         return [
-            "semgrep", "scan", "--config", "auto", "--quiet",
+            "semgrep", "scan", *self._rules_args(), "--quiet",
             "--sarif-output", "/out/semgrep.sarif",  # hallazgos (formato estándar)
             "--json-output", "/out/semgrep.json",  # solo para saber qué ficheros se analizaron: el SARIF no lo dice
             CONTAINER_ROOT,

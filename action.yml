@@ -29,6 +29,11 @@ inputs:
   history:
     description: Gitleaks revisa también todos los commits (necesita fetch-depth 0 en el checkout).
     default: "false"
+  semgrep-metrics:
+    description: >-
+      Si es "false", Semgrep no envía métricas anónimas ni comprueba su versión, y usa el conjunto de reglas p/default
+      (`--config auto` las exige). Las reglas se siguen descargando del registro de Semgrep.
+    default: "true"
   upload-sarif:
     description: Sube los hallazgos a la pestaña de seguridad de GitHub (Code scanning). En repos privados necesita GitHub Advanced Security.
     default: "true"
@@ -87,6 +92,7 @@ runs:
         INPUT_FAIL_ON: ${{ inputs.fail-on }}
         INPUT_HISTORY: ${{ inputs.history }}
         INPUT_SIGNED_BY: ${{ inputs.signed-by }}
+        INPUT_SEMGREP_METRICS: ${{ inputs.semgrep-metrics }}
         REPORT_DIR: ${{ inputs.report-dir || format('{0}/secscan-report', runner.temp) }}
         ACTION_PATH: ${{ github.action_path }}
         # El entorno virtual fuera del workspace: con `uses: ./` la ruta de la action ES el repo escaneado y
@@ -96,6 +102,7 @@ runs:
         args=(scan "$INPUT_PATH" --tools "$INPUT_TOOLS" --fail-on "$INPUT_FAIL_ON" --report-dir "$REPORT_DIR")
         if [ "$INPUT_HISTORY" = "true" ]; then args+=(--history); fi
         if [ -n "$INPUT_SIGNED_BY" ]; then args+=(--signed-by "$INPUT_SIGNED_BY"); fi
+        if [ "$INPUT_SEMGREP_METRICS" = "false" ]; then args+=(--no-semgrep-metrics); fi
 
         # Lo que imprime secscan incluye texto del repo escaneado (no es de fiar). Una línea que empiece por
         # «::error::» o «::stop-commands::» la leería el runner como una orden. Con stop-commands y un token
