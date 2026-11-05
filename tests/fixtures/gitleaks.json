@@ -1,0 +1,42 @@
+[
+ {
+  "RuleID": "generic-api-key",
+  "Description": "Detected a Generic API Key, potentially exposing access to various services and sensitive operations.",
+  "StartLine": 1,
+  "EndLine": 1,
+  "StartColumn": 1,
+  "EndColumn": 50,
+  "Match": "API_KEY = \"REDACTED\"",
+  "Secret": "REDACTED",
+  "File": "/target/tests/test_client.py",
+  "SymlinkFile": "",
+  "Commit": "",
+  "Entropy": 5.2479277,
+  "Author": "",
+  "Email": "",
+  "Date": "",
+  "Message": "",
+  "Tags": [],
+  "Fingerprint": "/target/tests/test_client.py:generic-api-key:1"
+ },
+ {
+  "RuleID": "generic-api-key",
+  "Description": "Detected a Generic API Key, potentially exposing access to various services and sensitive operations.",
+  "StartLine": 1,
+  "EndLine": 1,
+  "StartColumn": 1,
+  "EndColumn": 50,
+  "Match": "SERVICE_TOKEN = \"REDACTED\"",
+  "Secret": "REDACTED",
+  "File": "/target/tests/test_api.py",
+  "SymlinkFile": "",
+  "Commit": "",
+  "Entropy": 5,
+  "Author": "",
+  "Email": "",
+  "Date": "",
+  "Message": "",
+  "Tags": [],
+  "Fingerprint": "/target/tests/test_api.py:generic-api-key:1"
+ }
+]

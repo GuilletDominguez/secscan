@@ -1,0 +1,232 @@
+{
+ "version": "2.1.0",
+ "runs": [
+  {
+   "tool": {
+    "driver": {
+     "name": "Semgrep OSS",
+     "rules": [
+      {
+       "id": "python.lang.security.audit.dynamic-urllib-use-detected.dynamic-urllib-use-detected",
+       "name": "python.lang.security.audit.dynamic-urllib-use-detected.dynamic-urllib-use-detected",
+       "shortDescription": {
+        "text": "Semgrep Finding: python.lang.security.audit.dynamic-urllib-use-detected.dynamic-urllib-use-detected"
+       },
+       "defaultConfiguration": {
+        "level": "warning"
+       },
+       "properties": {
+        "precision": "very-high",
+        "tags": [
+         "CWE-939: Improper Authorization in Handler for Custom URL Scheme",
+         "LOW CONFIDENCE",
+         "OWASP-A01:2017 - Injection",
+         "security"
+        ]
+       }
+      },
+      {
+       "id": "python.lang.security.audit.eval-detected.eval-detected",
+       "name": "python.lang.security.audit.eval-detected.eval-detected",
+       "shortDescription": {
+        "text": "Semgrep Finding: python.lang.security.audit.eval-detected.eval-detected"
+       },
+       "defaultConfiguration": {
+        "level": "warning"
+       },
+       "properties": {
+        "precision": "very-high",
+        "tags": [
+         "CWE-95: Improper Neutralization of Directives in Dynamically Evaluated Code ('Eval Injection')",
+         "LOW CONFIDENCE",
+         "OWASP-A03:2021 - Injection",
+         "OWASP-A05:2025 - Injection",
+         "security"
+        ]
+       }
+      },
+      {
+       "id": "python.lang.security.audit.subprocess-shell-true.subprocess-shell-true",
+       "name": "python.lang.security.audit.subprocess-shell-true.subprocess-shell-true",
+       "shortDescription": {
+        "text": "Semgrep Finding: python.lang.security.audit.subprocess-shell-true.subprocess-shell-true"
+       },
+       "defaultConfiguration": {
+        "level": "error"
+       },
+       "properties": {
+        "precision": "very-high",
+        "tags": [
+         "CWE-78: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')",
+         "MEDIUM CONFIDENCE",
+         "OWASP-A01:2017 - Injection",
+         "OWASP-A03:2021 - Injection",
+         "OWASP-A05:2025 - Injection",
+         "security"
+        ]
+       }
+      },
+      {
+       "id": "python.lang.security.deserialization.pickle.avoid-pickle",
+       "name": "python.lang.security.deserialization.pickle.avoid-pickle",
+       "shortDescription": {
+        "text": "Semgrep Finding: python.lang.security.deserialization.pickle.avoid-pickle"
+       },
+       "defaultConfiguration": {
+        "level": "warning"
+       },
+       "properties": {
+        "precision": "very-high",
+        "tags": [
+         "CWE-502: Deserialization of Untrusted Data",
+         "LOW CONFIDENCE",
+         "OWASP-A08:2017 - Insecure Deserialization",
+         "OWASP-A08:2021 - Software and Data Integrity Failures",
+         "OWASP-A08:2025 - Software or Data Integrity Failures",
+         "security"
+        ]
+       }
+      }
+     ]
+    }
+   },
+   "results": [
+    {
+     "locations": [
+      {
+       "physicalLocation": {
+        "artifactLocation": {
+         "uri": "/target/app/ignored.py",
+         "uriBaseId": "%SRCROOT%"
+        },
+        "region": {
+         "endColumn": 28,
+         "endLine": 2,
+         "snippet": {
+          "text": "    return eval(expression)  # nosemgrep: eval-detected"
+         },
+         "startColumn": 12,
+         "startLine": 2
+        }
+       }
+      }
+     ],
+     "message": {
+      "text": "Detected the use of eval(). eval() can be dangerous if used to evaluate dynamic content. If this content can be input from outside the program, this may be a code injection vulnerability. Ensure evaluated content is not definable by external sources."
+     },
+     "properties": {},
+     "ruleId": "python.lang.security.audit.eval-detected.eval-detected",
+     "suppressions": [
+      {
+       "kind": "inSource"
+      }
+     ]
+    },
+    {
+     "locations": [
+      {
+       "physicalLocation": {
+        "artifactLocation": {
+         "uri": "/target/app/server.py",
+         "uriBaseId": "%SRCROOT%"
+        },
+        "region": {
+         "endColumn": 40,
+         "endLine": 7,
+         "snippet": {
+          "text": "    subprocess.call(command, shell=True)"
+         },
+         "startColumn": 36,
+         "startLine": 7
+        }
+       }
+      }
+     ],
+     "message": {
+      "text": "Found 'subprocess' function 'call' with 'shell=True'. This is dangerous because this call will spawn the command using a shell process. Doing so propagates current shell settings and variables, which makes it much easier for a malicious actor to execute commands. Use 'shell=False' instead."
+     },
+     "properties": {},
+     "ruleId": "python.lang.security.audit.subprocess-shell-true.subprocess-shell-true"
+    },
+    {
+     "locations": [
+      {
+       "physicalLocation": {
+        "artifactLocation": {
+         "uri": "/target/app/server.py",
+         "uriBaseId": "%SRCROOT%"
+        },
+        "region": {
+         "endColumn": 30,
+         "endLine": 11,
+         "snippet": {
+          "text": "    return pickle.loads(blob)"
+         },
+         "startColumn": 12,
+         "startLine": 11
+        }
+       }
+      }
+     ],
+     "message": {
+      "text": "Avoid using `pickle`, which is known to lead to code execution vulnerabilities. When unpickling, the serialized data could be manipulated to run arbitrary code. Instead, consider serializing the relevant data as JSON or a similar text-based serialization format."
+     },
+     "properties": {},
+     "ruleId": "python.lang.security.deserialization.pickle.avoid-pickle"
+    },
+    {
+     "locations": [
+      {
+       "physicalLocation": {
+        "artifactLocation": {
+         "uri": "/target/app/server.py",
+         "uriBaseId": "%SRCROOT%"
+        },
+        "region": {
+         "endColumn": 28,
+         "endLine": 15,
+         "snippet": {
+          "text": "    return eval(expression)"
+         },
+         "startColumn": 12,
+         "startLine": 15
+        }
+       }
+      }
+     ],
+     "message": {
+      "text": "Detected the use of eval(). eval() can be dangerous if used to evaluate dynamic content. If this content can be input from outside the program, this may be a code injection vulnerability. Ensure evaluated content is not definable by external sources."
+     },
+     "properties": {},
+     "ruleId": "python.lang.security.audit.eval-detected.eval-detected"
+    },
+    {
+     "locations": [
+      {
+       "physicalLocation": {
+        "artifactLocation": {
+         "uri": "/target/app/server.py",
+         "uriBaseId": "%SRCROOT%"
+        },
+        "region": {
+         "endColumn": 39,
+         "endLine": 19,
+         "snippet": {
+          "text": "    return urllib.request.urlopen(url)"
+         },
+         "startColumn": 12,
+         "startLine": 19
+        }
+       }
+      }
+     ],
+     "message": {
+      "text": "Detected a dynamic value being used with urllib. urllib supports 'file://' schemes, so a dynamic value controlled by a malicious actor may allow them to read arbitrary files. Audit uses of urllib calls to ensure user data cannot control the URLs, or consider using the 'requests' library instead."
+     },
+     "properties": {},
+     "ruleId": "python.lang.security.audit.dynamic-urllib-use-detected.dynamic-urllib-use-detected"
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,100 @@
+{
+ "SchemaVersion": 2,
+ "ArtifactName": "/target",
+ "Results": [
+  {
+   "Target": "clean/requirements.txt",
+   "Class": "lang-pkgs",
+   "Type": "pip"
+  },
+  {
+   "Target": "requirements.txt",
+   "Class": "lang-pkgs",
+   "Type": "pip",
+   "Vulnerabilities": [
+    {
+     "VulnerabilityID": "CVE-2018-18074",
+     "PkgName": "requests",
+     "InstalledVersion": "2.19.0",
+     "FixedVersion": "2.20.0",
+     "Severity": "HIGH",
+     "Title": "python-requests: Redirect from HTTPS to HTTP does not remove Authorization header",
+     "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2018-18074"
+    },
+    {
+     "VulnerabilityID": "CVE-2023-32681",
+     "PkgName": "requests",
+     "InstalledVersion": "2.19.0",
+     "FixedVersion": "2.31.0",
+     "Severity": "MEDIUM",
+     "Title": "python-requests: Unintended leak of Proxy-Authorization header",
+     "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2023-32681"
+    },
+    {
+     "VulnerabilityID": "CVE-2024-35195",
+     "PkgName": "requests",
+     "InstalledVersion": "2.19.0",
+     "FixedVersion": "2.32.0",
+     "Severity": "MEDIUM",
+     "Title": "requests: subsequent requests to the same host ignore cert verification",
+     "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-35195"
+    },
+    {
+     "VulnerabilityID": "CVE-2024-47081",
+     "PkgName": "requests",
+     "InstalledVersion": "2.19.0",
+     "FixedVersion": "2.32.4",
+     "Severity": "MEDIUM",
+     "Title": "requests: Requests vulnerable to .netrc credentials leak via malicious URLs",
+     "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-47081"
+    },
+    {
+     "VulnerabilityID": "CVE-2026-25645",
+     "PkgName": "requests",
+     "InstalledVersion": "2.19.0",
+     "FixedVersion": "2.33.0",
+     "Severity": "MEDIUM",
+     "Title": "requests: Requests: Security bypass due to predictable temporary file creation",
+     "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2026-25645"
+    }
+   ]
+  },
+  {
+   "Target": "Dockerfile",
+   "Class": "config",
+   "Type": "dockerfile",
+   "Misconfigurations": [
+    {
+     "Type": "Dockerfile Security Check",
+     "ID": "DS-0002",
+     "Title": "Image user should not be 'root'",
+     "Description": "Running containers with 'root' user can lead to a container escape situation. It is a best practice to run containers as non-root users, which can be done by adding a 'USER' statement to the Dockerfile.",
+     "Message": "Specify at least 1 USER command in Dockerfile with non-root user as argument",
+     "Resolution": "Add 'USER <non root user name>' line to the Dockerfile",
+     "Severity": "HIGH",
+     "PrimaryURL": "https://avd.aquasec.com/misconfig/ds-0002",
+     "Status": "FAIL",
+     "CauseMetadata": {
+      "Provider": "Dockerfile",
+      "Service": "general"
+     }
+    },
+    {
+     "Type": "Dockerfile Security Check",
+     "ID": "DS-0026",
+     "Title": "No HEALTHCHECK defined",
+     "Description": "You should add HEALTHCHECK instruction in your docker container images to perform the health check on running containers.",
+     "Message": "Add HEALTHCHECK instruction in your Dockerfile",
+     "Resolution": "Add HEALTHCHECK instruction in Dockerfile",
+     "Severity": "LOW",
+     "PrimaryURL": "https://avd.aquasec.com/misconfig/ds-0026",
+     "Status": "FAIL",
+     "CauseMetadata": {
+      "Provider": "Dockerfile",
+      "Service": "general"
+     }
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,18 @@
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+
+# Informes que genera secscan (contienen hallazgos de los repos analizados): se quedan en local, no se suben.
+# Nombres exactos: un `*.sarif` general ignoraría también el fixture tests/fixtures/semgrep.sarif.
+secscan-report.html
+secscan-report.md
+secscan-report.json
+secscan-report.sarif
+secscan-report/
+informe/
+informe-*/
+informes/

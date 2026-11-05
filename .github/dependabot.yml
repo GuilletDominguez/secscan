@@ -1,0 +1,24 @@
+# Las actions de terceros están fijadas por commit (una etiqueta puede reescribirse). Dependabot propone
+# cada semana el commit de la versión nueva, con su comentario de versión, y espera 7 días tras cada
+# publicación antes de proponerla: una versión retirada o comprometida a las pocas horas no llega a abrir PR.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /  # cubre .github/workflows y el action.yml de la raíz
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      acciones:
+        patterns: ["*"]
+
+  - package-ecosystem: uv
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      menores:
+        update-types: ["minor", "patch"]

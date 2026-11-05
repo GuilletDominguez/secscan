@@ -1,0 +1,210 @@
+name: secscan
+description: >-
+  Escanea el repositorio en busca de secretos, vulnerabilidades en el código, dependencias vulnerables y
+  malas configuraciones. Publica el informe en el PR, sube los hallazgos a la pestaña de seguridad y
+  falla si hay alguno de la severidad indicada.
+branding:
+  icon: shield
+  color: blue
+
+# Qué permisos necesita el workflow que la use (el resto, ninguno):
+#   permissions:
+#     contents: read          # leer el código
+#     pull-requests: write    # comentar en el PR   (solo si comment-on-pr: true)
+#     security-events: write  # subir el SARIF      (solo si upload-sarif: true)
+#
+# Úsala SIEMPRE con el evento `pull_request`, nunca con `pull_request_target`: éste da permisos de escritura y
+# secretos a código de forks, y escanear (o ejecutar) lo que envía un tercero con ellos es el ataque clásico.
+
+inputs:
+  path:
+    description: Carpeta a escanear. Para que las alertas de la pestaña de seguridad apunten a la línea correcta, la raíz del repo.
+    default: "."
+  tools:
+    description: Herramientas separadas por comas (gitleaks, semgrep, trivy).
+    default: "gitleaks,semgrep,trivy"
+  fail-on:
+    description: El job falla si hay hallazgos de esta severidad o más (none, low, medium, high, critical).
+    default: "high"
+  history:
+    description: Gitleaks revisa también todos los commits (necesita fetch-depth 0 en el checkout).
+    default: "false"
+  upload-sarif:
+    description: Sube los hallazgos a la pestaña de seguridad de GitHub (Code scanning). En repos privados necesita GitHub Advanced Security.
+    default: "true"
+  comment-on-pr:
+    description: Publica (y mantiene actualizado) un comentario con el resumen en el PR.
+    default: "true"
+  report-dir:
+    description: Carpeta de los informes. Por defecto, una carpeta temporal fuera del repo escaneado.
+    default: ""
+  artifact-name:
+    description: Nombre del artefacto con el informe completo (HTML, Markdown, JSON y SARIF).
+    default: "secscan-report"
+  signed-by:
+    description: >-
+      Quién firma el informe (aparece en el HTML y el Markdown). Lo decide quien instala la action; por
+      defecto, nadie. Por ejemplo `${{ github.repository_owner }}` o el nombre de tu equipo.
+    default: ""
+  category:
+    description: Categoría del SARIF; distinta por cada ejecución de secscan en el mismo repo (p. ej. con matriz).
+    default: "secscan"
+
+outputs:
+  exit-code:
+    description: "Código de salida de secscan: 0 correcto, 1 hay hallazgos de la severidad de fail-on o más, 2 una herramienta falló."
+    value: ${{ steps.scan.outputs.exit-code }}
+  report-dir:
+    description: Carpeta donde quedaron los informes.
+    value: ${{ steps.scan.outputs.report-dir }}
+
+runs:
+  using: composite
+  steps:
+    - uses: astral-sh/setup-uv@18d369b23da25a81e9458561248e1aafff6a70fa # v10.3.1
+      with:
+        enable-cache: false
+
+    # La base de datos de vulnerabilidades de Trivy pesa ~130 MB. Se refresca a diario: una caché más vieja
+    # daría un «sin vulnerabilidades» desactualizado.
+    - id: day
+      shell: bash
+      run: echo "day=$(date -u +%F)" >> "$GITHUB_OUTPUT"
+
+    - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ~/.cache/secscan/trivy
+        key: secscan-trivy-${{ runner.os }}-${{ steps.day.outputs.day }}
+        restore-keys: secscan-trivy-${{ runner.os }}-
+
+    - id: scan
+      shell: bash
+      env:
+        # Las entradas llegan por variables de entorno, NUNCA interpoladas en el script: así nadie puede
+        # inyectar comandos con un valor (el título de un PR, el nombre de una rama…).
+        INPUT_PATH: ${{ inputs.path }}
+        INPUT_TOOLS: ${{ inputs.tools }}
+        INPUT_FAIL_ON: ${{ inputs.fail-on }}
+        INPUT_HISTORY: ${{ inputs.history }}
+        INPUT_SIGNED_BY: ${{ inputs.signed-by }}
+        REPORT_DIR: ${{ inputs.report-dir || format('{0}/secscan-report', runner.temp) }}
+        ACTION_PATH: ${{ github.action_path }}
+        # El entorno virtual fuera del workspace: con `uses: ./` la ruta de la action ES el repo escaneado y
+        # su .venv acabaría analizado por los tres escáneres.
+        UV_PROJECT_ENVIRONMENT: ${{ runner.temp }}/secscan-venv
+      run: |
+        args=(scan "$INPUT_PATH" --tools "$INPUT_TOOLS" --fail-on "$INPUT_FAIL_ON" --report-dir "$REPORT_DIR")
+        if [ "$INPUT_HISTORY" = "true" ]; then args+=(--history); fi
+        if [ -n "$INPUT_SIGNED_BY" ]; then args+=(--signed-by "$INPUT_SIGNED_BY"); fi
+
+        # Lo que imprime secscan incluye texto del repo escaneado (no es de fiar). Una línea que empiece por
+        # «::error::» o «::stop-commands::» la leería el runner como una orden. Con stop-commands y un token
+        # aleatorio, el runner ignora cualquier orden hasta que se reanuda con ese token.
+        token="$(od -An -N16 -tx1 /dev/urandom | tr -d ' \n')"
+        echo "::stop-commands::$token"
+        set +e   # el código de salida se guarda: los pasos siguientes publican el informe aunque haya hallazgos
+        uv run --project "$ACTION_PATH" --frozen secscan "${args[@]}"
+        code=$?
+        set -e
+        echo "::$token::"
+
+        {
+          echo "exit-code=$code"
+          echo "report-dir=$REPORT_DIR"
+        } >> "$GITHUB_OUTPUT"
+
+    # El informe también va al resumen del job: se ve siempre, incluso en PR de forks, donde no se puede comentar.
+    - shell: bash
+      if: always()
+      env:
+        REPORT_DIR: ${{ steps.scan.outputs.report-dir }}
+      run: |
+        if [ -n "$REPORT_DIR" ] && [ -f "$REPORT_DIR/secscan-report.md" ]; then
+          head -c 900000 "$REPORT_DIR/secscan-report.md" >> "$GITHUB_STEP_SUMMARY"
+        else
+          echo "secscan no generó informe: revisa el log del paso «scan»." >> "$GITHUB_STEP_SUMMARY"
+        fi
+
+    # En un PR de un fork el token es de solo lectura: ni se puede comentar ni subir el SARIF. Se omiten
+    # (no es un fallo) y el informe sigue en el resumen del job y en el artefacto.
+    - uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
+      if: >-
+        always() && inputs.upload-sarif == 'true' && steps.scan.outputs.report-dir != '' &&
+        (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+      continue-on-error: true  # en repos privados sin GitHub Advanced Security falla; no debe tumbar el escaneo
+      with:
+        sarif_file: ${{ steps.scan.outputs.report-dir }}/secscan-report.sarif
+        category: ${{ inputs.category }}
+
+    - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+      if: >-
+        always() && inputs.comment-on-pr == 'true' && github.event_name == 'pull_request' &&
+        github.event.pull_request.head.repo.full_name == github.repository
+      env:
+        REPORT_DIR: ${{ steps.scan.outputs.report-dir }}
+        EXIT_CODE: ${{ steps.scan.outputs.exit-code }}
+        RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      with:
+        script: |
+          const fs = require('fs');
+          const marker = '<!-- secscan-report -->';
+          const MAX = 60000; // el límite de GitHub para un comentario es 65536
+
+          let report = null;
+          try {
+            report = fs.readFileSync(`${process.env.REPORT_DIR}/secscan-report.md`, 'utf8');
+          } catch (error) {
+            report = null;
+          }
+
+          const code = process.env.EXIT_CODE;
+          const status = code === '0'
+            ? '✅ Sin hallazgos que bloqueen este PR.'
+            : code === '1'
+              ? '❌ Hay hallazgos de la severidad que bloquea este PR.'
+              : '⚠️ Una herramienta falló: el resultado no es fiable, aunque no se listen hallazgos.';
+
+          let body = `${marker}\n## secscan\n\n${status}\n\n`;
+          if (report === null) {
+            body += 'No se pudo generar el informe. Revisa el log del job.\n';
+          } else {
+            const footer = `\n\n[Informe completo (HTML, Markdown, JSON y SARIF) en los artefactos de la ejecución](${process.env.RUN_URL}).`;
+            const room = MAX - body.length - footer.length;
+            if (report.length > room) {
+              report = report.slice(0, Math.max(0, room - 90)) + '\n\n… informe truncado (límite de tamaño de los comentarios de GitHub).';
+            }
+            body += report + footer;
+          }
+
+          const { owner, repo } = context.repo;
+          const issue_number = context.payload.pull_request.number;
+          const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number, per_page: 100 });
+          // Solo se actualiza un comentario del propio bot: cualquiera puede escribir la marca en el suyo.
+          const mine = comments.find((c) => c.user && c.user.login === 'github-actions[bot]' && c.body && c.body.startsWith(marker));
+          if (mine) {
+            await github.rest.issues.updateComment({ owner, repo, comment_id: mine.id, body });
+          } else {
+            await github.rest.issues.createComment({ owner, repo, issue_number, body });
+          }
+
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      if: always() && steps.scan.outputs.report-dir != ''
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: ${{ steps.scan.outputs.report-dir }}
+        retention-days: 14
+        if-no-files-found: warn
+
+    # Último paso: el job no queda en verde si hay hallazgos o si una herramienta falló. Antes se publicó todo.
+    - shell: bash
+      if: always() && steps.scan.outputs.exit-code != '0'
+      env:
+        EXIT_CODE: ${{ steps.scan.outputs.exit-code }}
+        FAIL_ON: ${{ inputs.fail-on }}
+      run: |
+        if [ "$EXIT_CODE" = "1" ]; then
+          echo "::error title=secscan::Hay hallazgos de severidad $FAIL_ON o superior. Mira el comentario del PR, el resumen del job o el artefacto."
+        else
+          echo "::error title=secscan::Una herramienta falló (código $EXIT_CODE): el resultado no es fiable. Revisa el log del paso «scan»."
+        fi
+        exit "$EXIT_CODE"

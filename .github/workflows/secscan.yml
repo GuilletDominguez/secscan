@@ -1,0 +1,37 @@
+name: secscan
+
+# `pull_request`, NUNCA `pull_request_target`: éste da permisos de escritura y secretos a código de forks.
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 5 * * 1"  # cada lunes: aparecen CVE nuevos sin que cambie el código
+  workflow_dispatch:
+
+# Sin permisos por defecto: cada job pide solo lo que usa.
+permissions: {}
+
+# Un push nuevo a la rama del PR cancela el escaneo anterior, que ya no sirve.
+concurrency:
+  group: secscan-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read          # leer el código
+      pull-requests: write    # comentar en el PR
+      security-events: write  # subir el SARIF a la pestaña de seguridad
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false  # el token no queda guardado en .git para los escáneres ni el resto de pasos
+
+      # Esta misma action, desde el propio repo: así secscan se prueba a sí mismo en cada cambio.
+      - uses: ./
+        with:
+          fail-on: high
