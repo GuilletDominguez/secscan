@@ -47,6 +47,32 @@ def _resolve(host: str) -> list[ipaddress.IPv4Address | ipaddress.IPv6Address]:
     return addresses
 
 
+def _vet_host(host: str, owns_target: bool) -> tuple[bool, bool, list[ipaddress.IPv4Address | ipaddress.IPv6Address]]:
+    """Comprobaciones de dirección comunes a los escaneos web y de puertos.
+
+    Devuelve (es loopback, es una IP literal, direcciones validadas).
+    """
+    addresses = _resolve(host)
+    for address in addresses:
+        if address.is_link_local or address.is_unspecified or address.is_multicast:
+            raise TargetError(f"{address} es una dirección que no se escanea (enlace local, sin especificar o multicast)")
+
+    loopback = all(address.is_loopback for address in addresses)
+    if not loopback and any(address.is_loopback for address in addresses):
+        raise TargetError(f"«{host}» resuelve a direcciones locales y externas a la vez")
+
+    is_literal = _is_ip(host)
+    # Libre de confirmación: lo que es local por definición (IP de loopback escrita tal cual, o `localhost`).
+    # Un nombre cualquiera que hoy resuelve a loopback no lo es: su DNS lo controla otra persona.
+    free = loopback and (is_literal or host.lower().rstrip(".") == "localhost")
+    if not free and not owns_target:
+        reason = "resuelve a una dirección local pero no es «localhost»" if loopback else "no es local"
+        raise TargetError(
+            f"«{host}» {reason}: confirma que es un sistema tuyo, o que tienes permiso para escanearlo, con --i-own-this"
+        )
+    return loopback, is_literal, addresses
+
+
 def validate_web_target(url: str, owns_target: bool) -> WebTarget:
     """Valida la URL de un escaneo web.
 
@@ -76,24 +102,7 @@ def validate_web_target(url: str, owns_target: bool) -> WebTarget:
     if parts.fragment:
         raise TargetError("la URL no puede llevar fragmento (#…)")
 
-    addresses = _resolve(host)
-    for address in addresses:
-        if address.is_link_local or address.is_unspecified or address.is_multicast:
-            raise TargetError(f"{address} es una dirección que no se escanea (enlace local, sin especificar o multicast)")
-
-    loopback = all(address.is_loopback for address in addresses)
-    if not loopback and any(address.is_loopback for address in addresses):
-        raise TargetError(f"«{host}» resuelve a direcciones locales y externas a la vez")
-
-    is_literal = _is_ip(host)
-    # Libre de confirmación: lo que es local por definición (IP de loopback escrita tal cual, o `localhost`).
-    # Un nombre cualquiera que hoy resuelve a loopback no lo es: su DNS lo controla otra persona.
-    free = loopback and (is_literal or host.lower().rstrip(".") == "localhost")
-    if not free and not owns_target:
-        reason = "resuelve a una dirección local pero no es «localhost»" if loopback else "no es local"
-        raise TargetError(
-            f"«{host}» {reason}: confirma que es un sistema tuyo, o que tienes permiso para escanearlo, con --i-own-this"
-        )
+    loopback, is_literal, addresses = _vet_host(host, owns_target)
 
     return WebTarget(
         url=url,
@@ -117,3 +126,41 @@ def validate_image_name(name: str) -> str:
             "nombre de imagen no válido: debe empezar por letra o número y solo llevar letras, números y _ . : / @ + -"
         )
     return name
+
+
+# Nombre de host o dominio tal cual: nada de esquema, puerto, ruta ni caracteres raros. Empieza por letra o número,
+# así que nunca se lee como una opción `-x` de la herramienta.
+HOSTNAME = re.compile(r"^[a-zA-Z0-9](?:[a-zA-Z0-9.-]{0,251}[a-zA-Z0-9])?$")
+
+
+@dataclass(frozen=True)
+class HostTarget:
+    host: str
+    loopback: bool
+    # Las direcciones ya validadas: es lo que se escanea, no el nombre, para que un DNS que cambie después
+    # (rebinding) no desvíe el escaneo hacia otra máquina.
+    ips: tuple[str, ...]
+
+
+def validate_host_target(host: str, owns_target: bool) -> HostTarget:
+    """Valida el host de un escaneo de puertos (un dominio o una IP, sin esquema ni puerto).
+
+    Mismas reglas que `validate_web_target`: nunca enlace local, sin especificar ni multicast; solo loopback
+    literal o `localhost` sin confirmar; todo lo demás exige `owns_target`.
+    """
+    if not host or any(char.isspace() or ord(char) < 32 or ord(char) == 127 for char in host):
+        raise TargetError("el host no puede estar vacío ni llevar espacios ni caracteres de control")
+    if not _is_ip(host) and not HOSTNAME.match(host):
+        raise TargetError("host no válido: escribe solo el dominio o la IP, sin http://, puerto ni ruta")
+    loopback, _is_literal, addresses = _vet_host(host, owns_target)
+    return HostTarget(host=host, loopback=loopback, ips=tuple(str(address) for address in addresses))
+
+
+PORTS = re.compile(r"^[0-9]{1,5}(?:-[0-9]{1,5})?(?:,[0-9]{1,5}(?:-[0-9]{1,5})?){0,99}$")
+
+
+def validate_ports(ports: str) -> str:
+    """Lista de puertos al estilo nmap: `80,443` o `1-1024`. Nada más, y todos entre 1 y 65535."""
+    if not PORTS.match(ports) or any(not 1 <= int(n) <= 65535 for n in re.findall(r"\d+", ports)):
+        raise TargetError("puertos no válidos: usa números del 1 al 65535, separados por comas o en rango (p. ej. 80,443 o 1-1024)")
+    return ports

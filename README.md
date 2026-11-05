@@ -9,6 +9,7 @@ reúne lo que encuentran en un único informe.
 | Vulnerabilidades en el código | Semgrep | `scan` |
 | Dependencias vulnerables y malas configuraciones (Dockerfile, IaC) | Trivy | `scan` |
 | Una aplicación web en marcha (cabeceras, cookies, formularios…) | OWASP ZAP | `web` |
+| Los puertos y servicios expuestos de un host | Nmap | `ports` |
 | Una imagen de contenedor (paquetes, dependencias, secretos en capas) | Trivy | `image` |
 
 El informe sale en la terminal, en HTML, en Markdown, en JSON o en SARIF. Hay también una GitHub Action que lo comenta
@@ -42,6 +43,7 @@ secscan scan ./mi-repo --no-semgrep-metrics       # Semgrep sin enviar métricas
 
 secscan web http://localhost:8000                 # escaneo web pasivo de tu app en local
 secscan web https://mi-app.example --i-own-this   # cualquier otro destino hay que confirmarlo
+secscan ports mi-servidor.example --i-own-this    # puertos TCP abiertos (dominio o IP, sin http://)
 secscan image mi-app:1.0                          # la imagen debe estar ya en local
 ```
 

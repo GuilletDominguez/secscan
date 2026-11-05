@@ -5,7 +5,7 @@ el código de un tercero, una web ajena o un PR de un fork, y la herramienta no 
 
 ## Una sola forma de hablar con todas las herramientas
 
-Cada herramienta (Gitleaks, Semgrep, Trivy, ZAP) se ejecuta en su contenedor, y su salida se convierte a un mismo
+Cada herramienta (Gitleaks, Semgrep, Trivy, ZAP, Nmap) se ejecuta en su contenedor, y su salida se convierte a un mismo
 tipo, `Finding`. Esas funciones de conversión son puras y se prueban con salidas guardadas, sin Docker.
 
 - La **huella** de un hallazgo no incluye el número de línea, así que uno marcado como falso positivo sigue marcado si

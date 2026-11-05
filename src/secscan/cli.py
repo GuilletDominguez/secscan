@@ -13,8 +13,8 @@ from secscan.report_html import to_html
 from secscan.report_md import to_markdown
 from secscan.config import Config, ConfigError, load_config, load_config_file
 from secscan.models import Severity
-from secscan.scanner import RUNNERS, scan, scan_image, scan_web
-from secscan.targets import TargetError, validate_image_name, validate_web_target
+from secscan.scanner import RUNNERS, scan, scan_image, scan_ports, scan_web
+from secscan.targets import TargetError, validate_host_target, validate_image_name, validate_ports, validate_web_target
 
 app = typer.Typer(help="Escáner de seguridad: secretos, código, librerías y configuración.", no_args_is_help=True)
 # La salida de datos (json/sarif) va a stdout; los mensajes de estado, a stderr.
@@ -219,3 +219,34 @@ def image_command(
 
     err.print(f"Escaneando la imagen {escape(image)} con Trivy…")
     _emit(scan_image(image, cfg), output_format, output, report_dir, fail_on, signed_by)
+
+
+@app.command("ports")
+def ports_command(
+    host: Annotated[str, typer.Argument(help="Dominio o IP, sin http:// ni puerto, p. ej. mi-app.example.")],
+    i_own_this: Annotated[
+        bool, typer.Option("--i-own-this", help="Confirma que el sistema es tuyo o tienes permiso para escanearlo (obligatorio si no es localhost).")
+    ] = False,
+    ports: Annotated[str | None, typer.Option(help="Puertos a mirar, p. ej. 80,443 o 1-1024. Por defecto, los 1000 más comunes.")] = None,
+    versions: Annotated[
+        bool, typer.Option("--versions", help="Identifica el servicio y su versión de cada puerto abierto (envía sondas: es más intrusivo).")
+    ] = False,
+    config: ConfigOpt = None,
+    output_format: FormatOpt = Format.table,
+    output: OutputOpt = None,
+    fail_on: FailOnOpt = FailOn.high,
+    report_dir: ReportDirOpt = None,
+    signed_by: SignedByOpt = "",
+) -> None:
+    """Escaneo de puertos TCP con nmap: qué servicios tiene expuestos un host."""
+    try:
+        target = validate_host_target(host, i_own_this)
+        if ports is not None:
+            validate_ports(ports)
+    except TargetError as error:
+        err.print(f"[red]{escape(str(error))}[/]")
+        raise typer.Exit(2) from None
+    cfg = _config_from(config)
+
+    err.print(f"Escaneando los puertos de {escape(host)} con nmap…")
+    _emit(scan_ports(target, cfg, ports, versions), output_format, output, report_dir, fail_on, signed_by)

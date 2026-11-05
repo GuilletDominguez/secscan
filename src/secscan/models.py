@@ -29,6 +29,7 @@ class Category(StrEnum):
     DEPENDENCY = "dependency"
     CONFIG = "config"
     WEB = "web"  # hallazgo de un escaneo a una aplicación en ejecución
+    NETWORK = "network"  # puerto o servicio expuesto de un host
     IMAGE = "image"  # vulnerabilidad en una imagen de contenedor
 
 

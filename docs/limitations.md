@@ -84,6 +84,19 @@ tiempo de ejecución, cumplimiento normativo.
   `--i-own-this`.
 - Genera tráfico hacia el destino. Escanea solo lo tuyo o lo que tengas permiso para revisar.
 
+## Nmap (puertos)
+
+- Escaneo TCP de conexión (`-sT`): no mira UDP. Por defecto revisa los 1000 puertos más comunes; con `--ports` eliges.
+- Un puerto abierto solo informa (INFO), salvo servicios que casi nunca deberían estar expuestos (bases de datos,
+  Redis, RDP, Telnet…), que suben a MEDIUM, HIGH o CRITICAL. Es una lista fija: un servicio en un puerto raro no se
+  califica por su nombre.
+- Se escanean las **IP** validadas, no el nombre. Si el nombre tiene IPv4 e IPv6, solo se mira la IPv4.
+- Detrás de un CDN o un cortafuegos ves los puertos del CDN, no los del servidor real. Un puerto filtrado y uno
+  cerrado no se distinguen en el informe: ninguno sale.
+- `--versions` envía sondas para identificar el servicio: es más intrusivo y tarda más.
+- Mismas reglas de destino que `web`: nunca enlace local, sin especificar o multicast, y todo lo que no sea
+  `localhost` exige `--i-own-this`. Escanea solo lo tuyo o lo que tengas permiso para revisar.
+
 ## Informes
 
 - El aviso de contenido sospechoso (`<script>`, `onerror=`…) es una lista de patrones: un atacante puede ofuscar el
