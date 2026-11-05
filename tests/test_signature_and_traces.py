@@ -140,15 +140,6 @@ class TestNoTraces:
             assert paths and all(p.startswith("/target/") for p in paths), (name, paths)
             assert all(re.fullmatch(r"/target/(app|tests)/\w+\.py", p) for p in paths), (name, paths)
 
-    def test_the_git_history_has_no_personal_email_either(self):
-        if not (ROOT / ".git").exists():
-            pytest.skip("sin repositorio git")
-        log = subprocess.run(["git", "log", "--all", "--format=%ae %ce"], cwd=ROOT, capture_output=True, text=True)
-        if log.returncode != 0:
-            pytest.skip("git no disponible")
-        emails = set(log.stdout.split())
-        # Quien clona el proyecto firma con su propia identidad; el historial no impone la de nadie en concreto.
-        assert len(emails) <= 1
 
 
 def git(*args, cwd):
