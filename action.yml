@@ -134,7 +134,7 @@ runs:
 
     # En un PR de un fork el token es de solo lectura: ni se puede comentar ni subir el SARIF. Se omiten
     # (no es un fallo) y el informe sigue en el resumen del job y en el artefacto.
-    - uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
+    - uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
       if: >-
         always() && inputs.upload-sarif == 'true' && steps.scan.outputs.report-dir != '' &&
         (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
